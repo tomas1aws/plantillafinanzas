@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { type DefaultValues, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,22 +12,25 @@ import { createMovement } from "@/lib/actions";
 import { movementSchema } from "@/lib/validations/finance";
 import type { Account, Category, Workspace } from "@/types/database";
 
+type MovementFormValues = z.input<typeof movementSchema>;
 type MovementValues = z.infer<typeof movementSchema>;
+
+const defaultMovementValues = (workspaces: Workspace[], accounts: Account[]): DefaultValues<MovementFormValues> => ({
+  workspace_id: workspaces[0]?.id,
+  type: "expense",
+  currency: "ARS",
+  date: new Date().toISOString().slice(0, 10),
+  account_id: accounts[0]?.id,
+  transfer_account_id: null,
+  category_id: null,
+  description: "",
+});
 
 export function MovementClientForm({ workspaces, accounts, categories }: { workspaces: Workspace[]; accounts: Account[]; categories: Category[] }) {
   const [isPending, startTransition] = useTransition();
-  const form = useForm<MovementValues>({
+  const form = useForm<MovementFormValues, unknown, MovementValues>({
     resolver: zodResolver(movementSchema),
-    defaultValues: {
-      workspace_id: workspaces[0]?.id,
-      type: "expense",
-      currency: "ARS",
-      date: new Date().toISOString().slice(0, 10),
-      account_id: accounts[0]?.id,
-      transfer_account_id: null,
-      category_id: null,
-      description: "",
-    },
+    defaultValues: defaultMovementValues(workspaces, accounts),
   });
 
   const onSubmit = form.handleSubmit((values) => {
