@@ -8,3 +8,18 @@ export function getSupabaseEnv() {
 
   return { url, anonKey };
 }
+
+export function getAbsoluteSiteUrl() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (!siteUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SITE_URL");
+  }
+
+  const parsedUrl = new URL(siteUrl);
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new Error("NEXT_PUBLIC_SITE_URL must be an absolute http(s) URL");
+  }
+
+  return parsedUrl.origin;
+}
