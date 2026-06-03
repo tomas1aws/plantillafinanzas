@@ -28,16 +28,18 @@ export async function signUp(_prevState: SignUpState, formData: FormData): Promi
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
 
   if (error) {
+    console.error("[auth:signup] Supabase signUp error", error);
     return { error: error.message };
   }
 
-  return { message: "Cuenta creada. Revisá tu email para confirmar tu cuenta." };
+  console.info("[auth:signup] Supabase signUp succeeded", { userId: data.user?.id ?? null });
+  return { message: "Cuenta creada. Revisá tu email para confirmarla." };
 }
 
 export async function signOut() {
