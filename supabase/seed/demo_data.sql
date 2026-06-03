@@ -1,0 +1,2 @@
+-- Optional demo data. Run after creating a test user and replacing the UUID below.
+-- select public.seed_workspace_defaults('<workspace-id>'::uuid);
