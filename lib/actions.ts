@@ -3,10 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAbsoluteSiteUrl } from "@/lib/supabase/config";
 import { accountSchema, categorySchema, inviteSchema, movementSchema, savingsGoalSchema, workspaceSchema } from "@/lib/validations/finance";
 
 function formObject(formData: FormData) {
   return Object.fromEntries(formData.entries());
+}
+
+function authCallbackUrl(next = "/dashboard") {
+  const siteUrl = getAbsoluteSiteUrl();
+  const callbackUrl = new URL("/auth/callback", siteUrl);
+  callbackUrl.searchParams.set("next", next);
+  return callbackUrl.toString();
 }
 
 export async function signIn(formData: FormData) {
@@ -22,8 +30,23 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
-  const { error } = await supabase.auth.signUp({ email, password });
-  if (error) redirect(`/register?error=${encodeURIComponent(error.message)}`);
+  const emailRedirectTo = authCallbackUrl("/dashboard");
+
+  console.info("[auth:signUp] calling supabase.auth.signUp", { emailRedirectTo });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo },
+  });
+  if (error) {
+    console.error("[auth:signUp] supabase.auth.signUp failed", {
+      emailRedirectTo,
+      message: error.message,
+      status: error.status,
+    });
+    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+  }
+  console.info("[auth:signUp] supabase.auth.signUp completed", { emailRedirectTo });
   redirect("/dashboard");
 }
 
