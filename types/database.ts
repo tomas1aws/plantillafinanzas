@@ -62,3 +62,22 @@ export interface SavingsGoal {
   currency: Currency;
   target_date: string | null;
 }
+
+export interface WorkspaceMember {
+  id: string;
+  user_id: string;
+  email: string;
+  role: WorkspaceRole;
+  created_at: string;
+}
+
+export interface WorkspaceInvitation {
+  id: string;
+  workspace_id: string;
+  email: string;
+  role: Exclude<WorkspaceRole, "owner">;
+  status: "pending" | "accepted" | "revoked";
+  token: string;
+  created_at: string;
+  expires_at: string | null;
+}

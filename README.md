@@ -109,3 +109,19 @@ npm run dev
 npm run build
 npm run typecheck
 ```
+
+## Invitaciones y envío de email
+
+Las invitaciones siempre se guardan en `workspace_invitations` y generan un link copiable con el formato `${NEXT_PUBLIC_SITE_URL}/invite/<token>`. El flujo funciona sin proveedor de email: la UI muestra el link para compartir manualmente y nunca revierte la creación por un error de envío.
+
+Para enviar emails automáticamente se puede configurar [Resend](https://resend.com/):
+
+```env
+NEXT_PUBLIC_SITE_URL=https://plantillafinanzas.vercel.app
+RESEND_API_KEY=re_...
+INVITATION_EMAIL_FROM=Finanzas <invitaciones@tu-dominio.com>
+```
+
+`INVITATION_EMAIL_FROM` debe usar un dominio verificado en Resend. Si faltan estas variables o el proveedor responde con error, la invitación permanece pendiente y se muestra el modo “copiar link”. También asegurate de agregar `${NEXT_PUBLIC_SITE_URL}/**` en los Redirect URLs de Supabase Auth para que registro/login puedan volver a `/invite/<token>`.
+
+La migración `supabase/migrations/202606040009_shared_workspace_invitations.sql` agrega tokens únicos, datos de aceptación/revocación y funciones SQL protegidas para crear, aceptar, revocar y administrar invitaciones y miembros.

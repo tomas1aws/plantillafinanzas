@@ -26,8 +26,15 @@ export const movementDateSchema = z.string().superRefine((value, context) => {
 });
 
 export const workspaceSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(80),
   type: z.enum(["personal", "shared"]).default("shared"),
+  invitation_email: z.union([z.literal(""), z.string().email("Email de invitación inválido")]).optional().default(""),
+  invitation_role: z.enum(["admin", "member"]).default("member"),
+});
+
+export const workspaceNameSchema = z.object({
+  workspace_id: z.string().uuid(),
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(80),
 });
 
 export const inviteSchema = z.object({
