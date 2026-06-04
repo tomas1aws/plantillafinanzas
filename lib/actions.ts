@@ -55,7 +55,7 @@ export async function updateAccount(formData: FormData) {
   }
   const initialDelta = parsed.data.initial_balance - Number(account.initial_balance);
   const { id, ...changes } = parsed.data;
-  const { error } = await supabase.from("accounts").update({ ...changes, current_balance: Number(account.current_balance) + initialDelta }).eq("id", id);
+  const { error } = await supabase.from("accounts").update({ ...changes, current_balance: Number(account.current_balance) + initialDelta }).eq("id", id).select("id").single();
   if (error) accountErrorRedirect(`No pudimos actualizar la cuenta: ${error.message}`);
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
 }

@@ -3,45 +3,6 @@ import type { Workspace, WorkspaceRole } from "@/types/database";
 
 export type WorkspaceWithRole = Workspace & { role: WorkspaceRole };
 
-const INITIAL_ACCOUNTS = [
-  { name: "Efectivo", type: "cash" as const },
-  { name: "Banco", type: "bank" as const },
-  { name: "Mercado Pago", type: "wallet" as const },
-];
-
-async function ensureInitialAccounts(workspaceId: string) {
-  const supabase = await createClient();
-  const accountNames = INITIAL_ACCOUNTS.map((account) => account.name);
-  const { data: existingAccounts, error: existingAccountsError } = await supabase
-    .from("accounts")
-    .select("name")
-    .eq("workspace_id", workspaceId)
-    .in("name", accountNames);
-
-  if (existingAccountsError) {
-    throw new Error(`No pudimos verificar las cuentas iniciales: ${existingAccountsError.message}`);
-  }
-
-  const existingNames = new Set((existingAccounts ?? []).map((account) => account.name));
-  const missingAccounts = INITIAL_ACCOUNTS.filter((account) => !existingNames.has(account.name));
-
-  if (!missingAccounts.length) return;
-
-  const { error: accountsError } = await supabase.from("accounts").insert(
-    missingAccounts.map((account) => ({
-      ...account,
-      workspace_id: workspaceId,
-      currency: "ARS" as const,
-      initial_balance: 0,
-      current_balance: 0,
-    })),
-  );
-
-  if (accountsError) {
-    throw new Error(`No pudimos crear las cuentas iniciales: ${accountsError.message}`);
-  }
-}
-
 export async function getOrCreateWorkspace(userId: string): Promise<string> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -59,8 +20,6 @@ export async function getOrCreateWorkspace(userId: string): Promise<string> {
   if (!workspaceId) {
     throw new Error("La creación automática no devolvió un workspace activo.");
   }
-
-  await ensureInitialAccounts(workspaceId);
 
   return workspaceId;
 }
