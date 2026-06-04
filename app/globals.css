@@ -1,45 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-slate-50: #f2f7fc;
-  --color-slate-100: #e5eef7;
-  --color-slate-200: #ccdbea;
-  --color-slate-400: #8194aa;
-  --color-slate-500: #63788f;
-  --color-slate-600: #4b6179;
-  --color-slate-700: #354b65;
-  --color-slate-900: #172b46;
-  --color-slate-950: #10223a;
-  --color-teal-50: #e8f4f7;
-  --color-teal-200: #b7d8e1;
-  --color-teal-600: #1d7188;
-  --color-teal-700: #155e75;
-  --color-teal-800: #164e63;
-  --color-teal-900: #123f52;
-  --color-red-50: #fff3f4;
-  --color-red-200: #f3c7cc;
-  --color-red-600: #c24a58;
-  --color-red-700: #9f3b48;
-  --color-green-50: #edf7f3;
-  --color-green-200: #b9dfd0;
-  --color-green-700: #2f725b;
+  --color-slate-50: #eef6fb;
+  --color-slate-100: #e5eef6;
+  --color-slate-200: #d4e4f0;
+  --color-slate-400: #7d93a8;
+  --color-slate-500: #55708a;
+  --color-slate-600: #425f79;
+  --color-slate-700: #2e4964;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #0b1324;
+  --color-blue-600: #2563eb;
+  --color-teal-50: #e6f4f3;
+  --color-teal-200: #b8deda;
+  --color-teal-600: #0f766e;
+  --color-teal-700: #0f766e;
+  --color-teal-800: #115e59;
+  --color-teal-900: #134e4a;
+  --color-red-50: #feecec;
+  --color-red-200: #f5b5b5;
+  --color-red-600: #c93636;
+  --color-red-700: #b91c1c;
+  --color-green-50: #ecfdf5;
+  --color-green-200: #a7f3d0;
+  --color-green-700: #047857;
+  --color-orange-50: #fff7ed;
+  --color-orange-200: #fdba74;
+  --color-orange-700: #c2410c;
 }
 
 :root {
-  --background: #edf4fa;
-  --foreground: #172b46;
-  --card: #f8fbff;
-  --input: #f3f8fd;
-  --sidebar: #e7f0f8;
-  --border: #cbd9e8;
-  --muted: #63788f;
-  --primary: #155e75;
-  --primary-foreground: #f8fbff;
+  --background: #e9f3fb;
+  --foreground: #0f172a;
+  --card: #f4f9fd;
+  --card-header: #eaf4fb;
+  --input: #f8fbfd;
+  --sidebar: #dceaf5;
+  --border: #d4e4f0;
+  --muted: #55708a;
+  --primary: #0f766e;
+  --primary-hover: #115e59;
+  --primary-foreground: #f8fbfd;
+  --accent: #2563eb;
+  --focus-ring: rgba(37, 99, 235, 0.18);
+  --shadow-soft: 0 8px 24px rgba(15, 76, 117, 0.08);
+  --shadow-soft-hover: 0 12px 28px rgba(15, 76, 117, 0.12);
 }
 
-* { border-color: var(--border); }
+* {
+  border-color: var(--border);
+}
+
 body {
-  background: radial-gradient(circle at top left, rgba(67, 128, 163, 0.14), transparent 35%), var(--background);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e9f3fb 0%, #eef6fb 40%, #e3eef8 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.16);
+  color: var(--foreground);
 }
