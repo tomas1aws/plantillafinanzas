@@ -18,30 +18,6 @@ export async function signIn(formData: FormData) {
   redirect("/dashboard");
 }
 
-export type SignUpState = {
-  error?: string;
-  message?: string;
-};
-
-export async function signUp(_prevState: SignUpState, formData: FormData): Promise<SignUpState> {
-  const supabase = await createClient();
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error("[auth:signup] Supabase signUp error", error);
-    return { error: error.message };
-  }
-
-  console.info("[auth:signup] Supabase signUp succeeded", { userId: data.user?.id ?? null });
-  return { message: "Cuenta creada. Revisá tu email para confirmarla." };
-}
-
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
