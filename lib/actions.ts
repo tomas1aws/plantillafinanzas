@@ -12,6 +12,7 @@ function accountErrorRedirect(message: string): never { errorRedirect("/dashboar
 function goalErrorRedirect(message: string): never { errorRedirect("/dashboard/goals", message); }
 function categoryErrorRedirect(message: string): never { errorRedirect("/dashboard/categories", message); }
 function movementErrorRedirect(message: string): never { errorRedirect("/dashboard/movements", message); }
+function workspaceErrorRedirect(message: string): never { errorRedirect("/dashboard/workspaces", message); }
 
 async function getActiveWorkspaceId(redirectPath: string, submittedWorkspaceId?: FormDataEntryValue | null) {
   const supabase = await createClient();
@@ -29,8 +30,46 @@ export async function signIn(formData: FormData) {
   redirect("/dashboard");
 }
 export async function signOut() { const supabase = await createClient(); await supabase.auth.signOut(); redirect("/login"); }
-export async function createWorkspace(formData: FormData) { const parsed = workspaceSchema.parse(formObject(formData)); const supabase = await createClient(); await supabase.from("workspaces").insert(parsed); revalidatePath("/dashboard"); }
-export async function inviteMember(formData: FormData) { const parsed = inviteSchema.parse(formObject(formData)); const supabase = await createClient(); await supabase.from("workspace_invitations").insert({ workspace_id: String(formData.get("workspace_id")), ...parsed }); revalidatePath("/dashboard/workspaces"); }
+export async function createWorkspace(formData: FormData) {
+  const parsed = workspaceSchema.safeParse(formObject(formData));
+  if (!parsed.success) workspaceErrorRedirect(parsed.error.issues[0]?.message ?? "Revisá los datos del workspace.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("workspaces").insert(parsed.data);
+  if (error) workspaceErrorRedirect(`No pudimos crear el workspace: ${error.message}`);
+  revalidatePath("/dashboard");
+  redirect("/dashboard/workspaces");
+}
+
+export async function inviteMember(formData: FormData) {
+  const parsed = inviteSchema.safeParse(formObject(formData));
+  const workspaceId = maintenanceIdSchema.safeParse(formData.get("workspace_id"));
+  if (!parsed.success || !workspaceId.success) workspaceErrorRedirect("Revisá los datos de la invitación.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("workspace_invitations").insert({ workspace_id: workspaceId.data, ...parsed.data });
+  if (error) workspaceErrorRedirect(`No pudimos enviar la invitación: ${error.message}`);
+  revalidatePath("/dashboard/workspaces");
+  redirect("/dashboard/workspaces");
+}
+
+export async function resetPersonalWorkspace(formData: FormData) {
+  const id = maintenanceIdSchema.safeParse(formData.get("id"));
+  if (!id.success) workspaceErrorRedirect("El workspace seleccionado no es válido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reset_personal_workspace", { target_workspace: id.data });
+  if (error) workspaceErrorRedirect(error.message);
+  revalidatePath("/dashboard");
+  redirect("/dashboard/workspaces");
+}
+
+export async function deleteSharedWorkspace(formData: FormData) {
+  const id = maintenanceIdSchema.safeParse(formData.get("id"));
+  if (!id.success) workspaceErrorRedirect("El workspace seleccionado no es válido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_workspace_cascade", { target_workspace: id.data });
+  if (error) workspaceErrorRedirect(error.message);
+  revalidatePath("/dashboard");
+  redirect("/dashboard/workspaces");
+}
 
 export async function createAccount(formData: FormData) {
   const parsed = accountFormSchema.safeParse(formObject(formData));
