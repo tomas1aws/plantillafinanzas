@@ -26,8 +26,8 @@ async function getActiveWorkspaceId(redirectPath: string, submittedWorkspaceId?:
   if (!user) redirect("/login");
 
   try {
-    const workspace = await getOrCreateWorkspace(user.id);
-    return String(submittedWorkspaceId || workspace.id);
+    const workspaceId = await getOrCreateWorkspace(user.id);
+    return String(submittedWorkspaceId || workspaceId);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido durante el onboarding automático.";
     errorRedirect(redirectPath, message);

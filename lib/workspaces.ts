@@ -3,8 +3,6 @@ import type { Workspace, WorkspaceRole } from "@/types/database";
 
 export type WorkspaceWithRole = Workspace & { role: WorkspaceRole };
 
-type WorkspaceRpcRow = Workspace & { role: WorkspaceRole };
-
 const INITIAL_ACCOUNTS = [
   { name: "Efectivo", type: "cash" as const },
   { name: "Banco", type: "bank" as const },
@@ -45,7 +43,7 @@ async function ensureInitialAccounts(workspaceId: string) {
   }
 }
 
-export async function getOrCreateWorkspace(userId: string): Promise<WorkspaceWithRole> {
+export async function getOrCreateWorkspace(userId: string): Promise<string> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -53,20 +51,19 @@ export async function getOrCreateWorkspace(userId: string): Promise<WorkspaceWit
   if (!user) throw new Error("No hay una sesión activa para crear el workspace.");
   if (user.id !== userId) throw new Error("El usuario de la sesión no coincide con el usuario solicitado.");
 
-  const { data, error } = await supabase.rpc("get_or_create_personal_workspace", { target_user: userId });
+  const { data: workspaceId, error } = await supabase.rpc("get_or_create_personal_workspace", { target_user: userId });
 
   if (error) {
     throw new Error(`No pudimos crear u obtener tu workspace personal: ${error.message}`);
   }
 
-  const workspace = Array.isArray(data) ? (data[0] as WorkspaceRpcRow | undefined) : (data as WorkspaceRpcRow | null);
-  if (!workspace?.id) {
+  if (!workspaceId) {
     throw new Error("La creación automática no devolvió un workspace activo.");
   }
 
-  await ensureInitialAccounts(workspace.id);
+  await ensureInitialAccounts(workspaceId);
 
-  return workspace;
+  return workspaceId;
 }
 
 export async function getUserWorkspaces(userId: string): Promise<WorkspaceWithRole[]> {
@@ -89,6 +86,11 @@ export async function getUserWorkspaces(userId: string): Promise<WorkspaceWithRo
     })
     .filter((workspace): workspace is WorkspaceWithRole => Boolean(workspace));
 
-  if (workspaces.some((workspace) => workspace.id === activeWorkspace.id)) return workspaces;
-  return [activeWorkspace, ...workspaces];
+  const activeWorkspaceIndex = workspaces.findIndex((workspace) => workspace.id === activeWorkspace);
+  if (activeWorkspaceIndex === -1) {
+    throw new Error("No pudimos obtener el workspace activo después de crearlo.");
+  }
+
+  if (activeWorkspaceIndex === 0) return workspaces;
+  return [workspaces[activeWorkspaceIndex], ...workspaces.filter((_, index) => index !== activeWorkspaceIndex)];
 }
