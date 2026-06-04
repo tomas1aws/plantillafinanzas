@@ -8,7 +8,7 @@ import type { Category } from "@/types/database";
 export function CategoryActions({ category }: { category: Category }) {
   return <div className="flex flex-wrap items-start gap-2">
     <details className="group">
-      <summary className="cursor-pointer list-none rounded-xl border bg-white px-3 py-2 text-center text-sm font-medium hover:bg-slate-50">Editar</summary>
+      <summary className="cursor-pointer list-none rounded-xl border bg-[var(--input)] px-3 py-2 text-center text-sm font-medium hover:bg-slate-50">Editar</summary>
       <form action={updateCategory} className="mt-3 grid min-w-64 gap-3 rounded-xl border bg-slate-50 p-3">
         <input type="hidden" name="id" value={category.id} />
         <Input name="name" defaultValue={category.name} required />

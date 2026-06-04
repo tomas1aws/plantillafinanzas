@@ -9,7 +9,7 @@ export function AccountEditForm({ account, hasMovements }: { account: Account; h
   return <div className="flex flex-wrap gap-2">
     <details>
       <summary className="cursor-pointer rounded-xl border px-3 py-2 text-sm font-medium">Editar</summary>
-      <form action={updateAccount} className="mt-2 grid min-w-64 gap-2 rounded-xl border bg-white p-3 shadow-lg">
+      <form action={updateAccount} className="mt-2 grid min-w-64 gap-2 rounded-xl border bg-[var(--card)] p-3 shadow-lg">
         <input type="hidden" name="id" value={account.id} />
         <Input name="name" defaultValue={account.name} required />
         <SelectNative name="type" defaultValue={account.type}><option value="cash">Efectivo</option><option value="bank">Banco</option><option value="wallet">Billetera</option><option value="other">Otra</option></SelectNative>

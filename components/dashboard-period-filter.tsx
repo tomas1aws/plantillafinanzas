@@ -77,12 +77,12 @@ export function DashboardPeriodFilter({
     navigate("custom", customFrom, customTo);
   };
 
-  return <section className="rounded-2xl border bg-white p-4 shadow-sm">
+  return <section className="rounded-2xl border bg-[var(--card)] p-4 shadow-sm">
     <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-teal-800"><CalendarDays size={18} /><span>Período activo: {activeLabel}</span></div>
         <div className="flex flex-wrap gap-2">
-          {([['today', 'Hoy'], ['current-month', 'Este mes'], ['current-year', 'Este año'], ['all', 'Todo']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => navigate(value)} className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${period === value ? "border-teal-700 bg-teal-700 text-white" : "bg-white text-slate-600 hover:border-teal-600 hover:text-teal-700"}`}>{label}</button>)}
+          {([['today', 'Hoy'], ['current-month', 'Este mes'], ['current-year', 'Este año'], ['all', 'Todo']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => navigate(value)} className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${period === value ? "border-teal-700 bg-teal-700 text-white" : "bg-[var(--input)] text-slate-600 hover:border-teal-600 hover:text-teal-700"}`}>{label}</button>)}
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
