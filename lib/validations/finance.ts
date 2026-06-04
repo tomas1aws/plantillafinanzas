@@ -12,12 +12,15 @@ export const inviteSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
-export const accountSchema = z.object({
-  workspace_id: z.string().uuid(),
+export const accountFormSchema = z.object({
   name: z.string().min(2),
   type: z.enum(["cash", "bank", "wallet", "other"]),
   currency: currencySchema,
   initial_balance: z.coerce.number().default(0),
+});
+
+export const accountSchema = accountFormSchema.extend({
+  workspace_id: z.string().uuid(),
   is_active: z.coerce.boolean().default(true),
 });
 
