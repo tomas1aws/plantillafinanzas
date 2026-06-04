@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SelectNative } from "@/components/ui/select";
-import type { Workspace } from "@/types/database";
 import { getDashboardDateRange, isDashboardPeriod, type DashboardPeriod } from "@/lib/dashboard-period";
 
 const storageKey = "dashboard-period-filter";
@@ -21,16 +20,12 @@ const periodOptions: { value: DashboardPeriod; label: string }[] = [
 ];
 
 export function DashboardPeriodFilter({
-  workspaces,
-  activeWorkspace,
   currency,
   period,
   from,
   to,
   activeLabel,
 }: {
-  workspaces: Workspace[];
-  activeWorkspace: string | null;
   currency: "ARS" | "USD";
   period: DashboardPeriod;
   from: string | null;
@@ -91,7 +86,6 @@ export function DashboardPeriodFilter({
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <label className="grid gap-1 text-xs font-medium text-slate-500">Espacio<SelectNative value={activeWorkspace ?? ""} onChange={(event) => { const params = new URLSearchParams(searchParams.toString()); params.set("workspace", event.target.value); router.push(`${pathname}?${params.toString()}`); }}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</SelectNative></label>
         <label className="grid gap-1 text-xs font-medium text-slate-500">Moneda<SelectNative value={currency} onChange={(event) => { const params = new URLSearchParams(searchParams.toString()); params.set("currency", event.target.value); router.push(`${pathname}?${params.toString()}`); }}><option>ARS</option><option>USD</option></SelectNative></label>
         <label className="grid gap-1 text-xs font-medium text-slate-500">Período<SelectNative value={selectedPeriod} onChange={(event) => { const value = event.target.value as DashboardPeriod; setSelectedPeriod(value); if (value !== "custom") navigate(value); }}>{periodOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</SelectNative></label>
       </div>

@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/actions";
 import { createClient } from "@/lib/supabase/browser";
 
-export function AuthForm({ mode, error, redirectTo = "/dashboard" }: { mode: "login" | "register"; error?: string; redirectTo?: string }) {
+export function AuthForm({ mode, error, redirectTo = "/workspace-select" }: { mode: "login" | "register"; error?: string; redirectTo?: string }) {
   const isLogin = mode === "login";
-  const safeRedirectTo = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/dashboard";
+  const safeRedirectTo = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/workspace-select";
   const [registerError, setRegisterError] = useState<string>();
   const [registerMessage, setRegisterMessage] = useState<string>();
   const [isRegisterPending, setIsRegisterPending] = useState(false);
