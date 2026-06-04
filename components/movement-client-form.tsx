@@ -2,11 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition } from "react";
-import { type DefaultValues, useForm } from "react-hook-form";
+import { type DefaultValues, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select";
 import { createMovement } from "@/lib/actions";
 import { movementSchema } from "@/lib/validations/finance";
@@ -14,32 +15,18 @@ import type { Account, Category, Workspace } from "@/types/database";
 
 type MovementFormValues = z.input<typeof movementSchema>;
 type MovementValues = z.infer<typeof movementSchema>;
-
-const defaultMovementValues = (workspaces: Workspace[], accounts: Account[]): DefaultValues<MovementFormValues> => ({
-  workspace_id: workspaces[0]?.id,
-  type: "expense",
-  currency: "ARS",
-  date: new Date().toISOString().slice(0, 10),
-  account_id: accounts[0]?.id,
-  transfer_account_id: null,
-  category_id: null,
-  description: "",
-});
+const defaults = (workspaces: Workspace[], accounts: Account[]): DefaultValues<MovementFormValues> => ({ workspace_id: workspaces[0]?.id, type: "expense", currency: "ARS", date: new Date().toISOString().slice(0, 10), account_id: accounts[0]?.id, transfer_account_id: null, category_id: null, description: "" });
 
 export function MovementClientForm({ workspaces, accounts, categories }: { workspaces: Workspace[]; accounts: Account[]; categories: Category[] }) {
   const [isPending, startTransition] = useTransition();
-  const form = useForm<MovementFormValues, unknown, MovementValues>({
-    resolver: zodResolver(movementSchema),
-    defaultValues: defaultMovementValues(workspaces, accounts),
-  });
-
+  const form = useForm<MovementFormValues, unknown, MovementValues>({ resolver: zodResolver(movementSchema), defaultValues: defaults(workspaces, accounts) });
+  const movementType = useWatch({ control: form.control, name: "type" });
   const onSubmit = form.handleSubmit((values) => {
     const formData = new FormData();
-    Object.entries(values).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) formData.set(key, String(value));
-    });
+    Object.entries({ ...values, transfer_account_id: values.type === "transfer" ? values.transfer_account_id : null }).forEach(([key, value]) => { if (value !== null && value !== undefined) formData.set(key, String(value)); });
     startTransition(() => void createMovement(formData));
   });
+  const errorMessage = Object.values(form.formState.errors).find(Boolean)?.message;
 
-  return <Card><CardHeader><CardTitle>Nuevo movimiento</CardTitle></CardHeader><CardContent><form onSubmit={onSubmit} className="grid gap-3"><SelectNative {...form.register("workspace_id")}>{workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</SelectNative><SelectNative {...form.register("type")}><option value="income">Ingreso</option><option value="expense">Gasto</option><option value="transfer">Transferencia</option></SelectNative><Input type="number" step="0.01" placeholder="Monto" {...form.register("amount")} /><SelectNative {...form.register("currency")}><option>ARS</option><option>USD</option></SelectNative><Input type="date" {...form.register("date")} /><SelectNative {...form.register("account_id")}>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</SelectNative><SelectNative {...form.register("transfer_account_id", { setValueAs: (value) => value || null })}><option value="">Cuenta destino</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</SelectNative><SelectNative {...form.register("category_id", { setValueAs: (value) => value || null })}><option value="">Sin categoría</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectNative><Input placeholder="Descripción" {...form.register("description")} />{Object.values(form.formState.errors).length ? <p className="text-sm text-red-600">Revisá los campos requeridos.</p> : null}<Button disabled={isPending}>{isPending ? "Guardando..." : "Crear movimiento"}</Button></form></CardContent></Card>;
+  return <Card><CardHeader><CardTitle>Nuevo movimiento</CardTitle></CardHeader><CardContent><form onSubmit={onSubmit} className="grid gap-3"><Label>Workspace</Label><SelectNative {...form.register("workspace_id")}>{workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</SelectNative><Label>Tipo</Label><SelectNative {...form.register("type", { onChange: (event) => { if (event.target.value !== "transfer") form.setValue("transfer_account_id", null); } })}><option value="income">Ingreso</option><option value="expense">Gasto</option><option value="transfer">Transferencia</option></SelectNative><Label>Monto</Label><Input type="number" step="0.01" placeholder="Monto" {...form.register("amount")} /><Label>Moneda</Label><SelectNative {...form.register("currency")}><option>ARS</option><option>USD</option></SelectNative><Label>Fecha</Label><Input type="date" {...form.register("date")} /><Label>Cuenta origen</Label><SelectNative {...form.register("account_id")}>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</SelectNative>{movementType === "transfer" ? <><Label>Cuenta destino</Label><SelectNative {...form.register("transfer_account_id", { setValueAs: (value) => value || null })}><option value="">Seleccioná una cuenta destino</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</SelectNative></> : null}<Label>Categoría</Label><SelectNative {...form.register("category_id", { setValueAs: (value) => value || null })}><option value="">Sin categoría</option>{categories.filter((category) => category.kind === movementType).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectNative><Label>Descripción</Label><Input placeholder="Descripción" {...form.register("description")} />{errorMessage ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{String(errorMessage)}</p> : null}<Button disabled={isPending}>{isPending ? "Guardando..." : "Crear movimiento"}</Button></form></CardContent></Card>;
 }
