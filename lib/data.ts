@@ -52,7 +52,7 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
     const activeMovements = typedMovements.filter((movement) => !movement.is_reversed);
     const income = activeMovements.filter((m) => m.type === "income").reduce((sum, m) => sum + Number(m.amount), 0);
     const expense = activeMovements.filter((m) => m.type === "expense").reduce((sum, m) => sum + Number(m.amount), 0);
-    const netWorth = typedAccounts.filter((a) => a.is_active).reduce((sum, a) => sum + Number(a.current_balance), 0);
+    const netWorth = typedAccounts.reduce((sum, a) => sum + Number(a.current_balance), 0);
 
     const seriesMap = new Map<string, { date: string; income: number; expense: number }>();
     activeMovements.forEach((movement) => {

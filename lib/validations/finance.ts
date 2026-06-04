@@ -21,12 +21,6 @@ export const accountFormSchema = z.object({
 
 export const accountUpdateSchema = accountFormSchema.extend({
   id: z.string().uuid(),
-  is_active: z.enum(["true", "false"]).transform((value) => value === "true"),
-});
-
-export const accountSchema = accountFormSchema.extend({
-  workspace_id: z.string().uuid(),
-  is_active: z.coerce.boolean().default(true),
 });
 
 export const categorySchema = z.object({

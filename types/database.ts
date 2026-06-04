@@ -22,7 +22,6 @@ export interface Account {
   currency: Currency;
   initial_balance: number;
   current_balance: number;
-  is_active: boolean;
   created_at: string;
 }
 

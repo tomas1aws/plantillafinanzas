@@ -34,7 +34,6 @@ async function ensureInitialAccounts(workspaceId: string) {
       currency: "ARS" as const,
       initial_balance: 0,
       current_balance: 0,
-      is_active: true,
     })),
   );
 
