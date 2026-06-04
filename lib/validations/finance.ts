@@ -2,6 +2,29 @@ import { z } from "zod";
 
 export const currencySchema = z.enum(["ARS", "USD"]);
 
+export function getLocalIsoDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoCalendarDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const [, year, month, day] = match.map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day;
+}
+
+export const movementDateSchema = z.string().superRefine((value, context) => {
+  if (!isIsoCalendarDate(value)) {
+    context.addIssue({ code: "custom", message: "Ingresá una fecha válida." });
+    return;
+  }
+  if (value > getLocalIsoDate()) context.addIssue({ code: "custom", message: "La fecha del movimiento no puede ser futura." });
+});
+
 export const workspaceSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   type: z.enum(["personal", "shared"]).default("shared"),
@@ -41,7 +64,7 @@ export const movementSchema = z.object({
   type: z.enum(["income", "expense", "transfer"]),
   amount: z.coerce.number().positive(),
   currency: currencySchema,
-  date: z.string().min(10),
+  date: movementDateSchema,
   account_id: z.string().uuid(),
   transfer_account_id: z.string().uuid().optional().nullable(),
   category_id: z.string().uuid().optional().nullable(),
