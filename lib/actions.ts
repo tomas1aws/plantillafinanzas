@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateWorkspace } from "@/lib/workspaces";
-import { accountFormSchema, accountUpdateSchema, categorySchema, inviteSchema, movementSchema, savingsGoalProgressSchema, savingsGoalSchema, workspaceSchema } from "@/lib/validations/finance";
+import { accountFormSchema, accountUpdateSchema, categorySchema, categoryUpdateSchema, inviteSchema, maintenanceIdSchema, movementSchema, savingsGoalProgressSchema, savingsGoalSchema, workspaceSchema } from "@/lib/validations/finance";
 
 function formObject(formData: FormData) { return Object.fromEntries(formData.entries()); }
 function errorRedirect(path: string, message: string): never { redirect(`${path}?error=${encodeURIComponent(message)}`); }
 function accountErrorRedirect(message: string): never { errorRedirect("/dashboard/accounts", message); }
 function goalErrorRedirect(message: string): never { errorRedirect("/dashboard/goals", message); }
+function categoryErrorRedirect(message: string): never { errorRedirect("/dashboard/categories", message); }
+function movementErrorRedirect(message: string): never { errorRedirect("/dashboard/movements", message); }
 
 async function getActiveWorkspaceId(redirectPath: string, submittedWorkspaceId?: FormDataEntryValue | null) {
   const supabase = await createClient();
@@ -65,6 +67,15 @@ export async function updateAccountStatus(formData: FormData) {
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts");
 }
 
+export async function removeOrDeactivateAccount(formData: FormData) {
+  const id = maintenanceIdSchema.safeParse(formData.get("id"));
+  if (!id.success) accountErrorRedirect("La cuenta seleccionada no es válida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_or_deactivate_account", { target_id: id.data });
+  if (error) accountErrorRedirect(`No pudimos eliminar o desactivar la cuenta: ${error.message}`);
+  revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
+}
+
 export async function createCategory(formData: FormData) {
   const workspace_id = await getActiveWorkspaceId("/dashboard/categories", formData.get("workspace_id"));
   const parsed = categorySchema.safeParse({ ...formObject(formData), workspace_id });
@@ -72,6 +83,25 @@ export async function createCategory(formData: FormData) {
   const supabase = await createClient(); const { error } = await supabase.from("categories").insert(parsed.data);
   if (error) errorRedirect("/dashboard/categories", `No pudimos crear la categoría: ${error.message}`);
   revalidatePath("/dashboard/categories");
+}
+
+export async function updateCategory(formData: FormData) {
+  const parsed = categoryUpdateSchema.safeParse(formObject(formData));
+  if (!parsed.success) categoryErrorRedirect("Revisá los datos de la categoría e intentá nuevamente.");
+  const { id, ...changes } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.from("categories").update(changes).eq("id", id);
+  if (error) categoryErrorRedirect(`No pudimos actualizar la categoría: ${error.message}`);
+  revalidatePath("/dashboard"); revalidatePath("/dashboard/categories"); revalidatePath("/dashboard/movements");
+}
+
+export async function removeOrDeactivateCategory(formData: FormData) {
+  const id = maintenanceIdSchema.safeParse(formData.get("id"));
+  if (!id.success) categoryErrorRedirect("La categoría seleccionada no es válida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_or_deactivate_category", { target_id: id.data });
+  if (error) categoryErrorRedirect(`No pudimos eliminar o desactivar la categoría: ${error.message}`);
+  revalidatePath("/dashboard"); revalidatePath("/dashboard/categories"); revalidatePath("/dashboard/movements");
 }
 
 export async function createMovement(formData: FormData) {
@@ -82,6 +112,15 @@ export async function createMovement(formData: FormData) {
   const supabase = await createClient(); const { error } = await supabase.from("movements").insert(parsed.data);
   if (error) errorRedirect("/dashboard/movements", `No pudimos crear el movimiento: ${error.message}`);
   revalidatePath("/dashboard"); revalidatePath("/dashboard/movements"); revalidatePath("/dashboard/accounts");
+}
+
+export async function reverseMovement(formData: FormData) {
+  const id = maintenanceIdSchema.safeParse(formData.get("id"));
+  if (!id.success) movementErrorRedirect("El movimiento seleccionado no es válido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reverse_movement", { target_id: id.data });
+  if (error) movementErrorRedirect(`No pudimos revertir el movimiento: ${error.message}`);
+  revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
 }
 
 export async function createSavingsGoal(formData: FormData) {
