@@ -37,7 +37,7 @@ export async function createAccount(formData: FormData) {
   if (!parsed.success) accountErrorRedirect("Revisá los datos de la cuenta e intentá nuevamente.");
   const workspace_id = await getActiveWorkspaceId("/dashboard/accounts");
   const supabase = await createClient();
-  const { error } = await supabase.from("accounts").insert({ ...parsed.data, workspace_id, is_active: true });
+  const { error } = await supabase.from("accounts").insert({ ...parsed.data, workspace_id });
   if (error) accountErrorRedirect(`No pudimos crear la cuenta: ${error.message}`);
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts");
 }
@@ -60,20 +60,16 @@ export async function updateAccount(formData: FormData) {
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
 }
 
-export async function updateAccountStatus(formData: FormData) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("accounts").update({ is_active: formData.get("is_active") === "true" }).eq("id", String(formData.get("id")));
-  if (error) accountErrorRedirect(`No pudimos cambiar el estado de la cuenta: ${error.message}`);
-  revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts");
-}
-
-export async function removeOrDeactivateAccount(formData: FormData) {
+export async function deleteAccount(formData: FormData) {
   const id = maintenanceIdSchema.safeParse(formData.get("id"));
   if (!id.success) accountErrorRedirect("La cuenta seleccionada no es válida.");
   const supabase = await createClient();
-  const { error } = await supabase.rpc("remove_or_deactivate_account", { target_id: id.data });
-  if (error) accountErrorRedirect(`No pudimos eliminar o desactivar la cuenta: ${error.message}`);
+  const { data: deletedAccount, error } = await supabase.from("accounts").delete().eq("id", id.data).select("id").maybeSingle();
+  if (error?.code === "23503") accountErrorRedirect("No se puede eliminar esta cuenta porque tiene movimientos asociados. Primero revertí o eliminá esos movimientos.");
+  if (error) accountErrorRedirect(`No pudimos eliminar la cuenta: ${error.message}`);
+  if (!deletedAccount) accountErrorRedirect("No pudimos eliminar la cuenta. Verificá que exista y que tengas permisos para eliminarla.");
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
+  redirect("/dashboard/accounts");
 }
 
 export async function createCategory(formData: FormData) {
@@ -153,7 +149,10 @@ export async function updateSavingsGoalProgress(formData: FormData) {
 export async function deleteSavingsGoal(formData: FormData) {
   const parsed = savingsGoalProgressSchema.shape.id.safeParse(formData.get("id"));
   if (!parsed.success) goalErrorRedirect("El objetivo seleccionado no es válido.");
-  const supabase = await createClient(); const { error } = await supabase.from("savings_goals").delete().eq("id", parsed.data);
+  const supabase = await createClient();
+  const { data: deletedGoal, error } = await supabase.from("savings_goals").delete().eq("id", parsed.data).select("id").maybeSingle();
   if (error) goalErrorRedirect(`No pudimos eliminar el objetivo: ${error.message}`);
+  if (!deletedGoal) goalErrorRedirect("No pudimos eliminar el objetivo. Verificá que exista y que tengas permisos para eliminarlo.");
   revalidatePath("/dashboard/goals");
+  redirect("/dashboard/goals");
 }
