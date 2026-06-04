@@ -2,7 +2,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { getDashboardDateRange, type DashboardPeriodSelection } from "@/lib/dashboard-period";
 import { createClient } from "@/lib/supabase/server";
-import { getUserWorkspaces } from "@/lib/workspaces";
+import { getActiveWorkspace, getUserWorkspaces } from "@/lib/workspaces";
 import type { Account, Category, Currency, Movement, SavingsGoal } from "@/types/database";
 
 const emptyMetrics = { netWorth: 0, income: 0, expense: 0, balance: 0 };
@@ -19,7 +19,7 @@ export async function getWorkspaces() {
   return getUserWorkspaces(user.id);
 }
 
-export async function getDashboardData(workspaceId?: string, currency: Currency = "ARS", periodSelection: DashboardPeriodSelection = {}) {
+export async function getDashboardData(currency: Currency = "ARS", periodSelection: DashboardPeriodSelection = {}) {
   const supabase = await createClient();
   const user = await getSessionUser();
   const dateRange = getDashboardDateRange(periodSelection);
@@ -29,13 +29,10 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
   }
 
   try {
-    const workspaces = await getUserWorkspaces(user.id);
-    const requestedWorkspace = workspaces.find((workspace) => workspace.id === workspaceId);
-    const activeWorkspace = requestedWorkspace?.id ?? workspaces[0]?.id ?? null;
-
-    if (!activeWorkspace) {
-      return { workspaces, activeWorkspace: null, accounts: [], categories: [], movements: [], goals: [], metrics: emptyMetrics, series: [], expensesByCategory: [], dateRange, onboardingError: "La creación automática no devolvió un workspace activo." };
-    }
+    const workspace = await getActiveWorkspace(user.id);
+    const activeWorkspace = workspace?.id ?? null;
+    const workspaces = workspace ? [workspace] : [];
+    if (!activeWorkspace) return { workspaces, activeWorkspace: null, accounts: [], categories: [], movements: [], goals: [], metrics: emptyMetrics, series: [], expensesByCategory: [], dateRange, onboardingError: "No hay un workspace activo." };
 
     let movementsQuery = supabase.from("movements").select("*").eq("workspace_id", activeWorkspace).order("date", { ascending: false });
     if (dateRange.to) movementsQuery = movementsQuery.lte("date", dateRange.to);
@@ -110,8 +107,7 @@ export async function getAccountsData() {
   const user = await getSessionUser();
   if (!user) return { accounts: [] as Account[], movementAccountIds: [] as string[], onboardingError: null as string | null };
   try {
-    const workspaces = await getUserWorkspaces(user.id);
-    const workspaceId = workspaces[0]?.id;
+    const workspaceId = (await getActiveWorkspace(user.id))?.id;
     if (!workspaceId) return { accounts: [] as Account[], movementAccountIds: [] as string[], onboardingError: "No hay un workspace activo." };
     const [{ data: accounts, error: accountsError }, { data: movements, error: movementsError }] = await Promise.all([
       supabase.from("accounts").select("*").eq("workspace_id", workspaceId).order("name"),

@@ -64,9 +64,9 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
   }
 
   const { data: workspaceId, error: acceptanceError } = await supabase.rpc("accept_workspace_invitation", { target_token: token });
-  if (!acceptanceError && workspaceId) redirect(`/dashboard?workspace=${workspaceId}`);
+  if (!acceptanceError && workspaceId) redirect("/workspace-select");
 
-  return <InvitationCard title="No pudimos aceptar la invitación" message={acceptanceError?.message ?? "La invitación ya no está disponible."} action={<Button asChild variant="outline"><Link href="/dashboard/workspaces">Volver a workspaces</Link></Button>} />;
+  return <InvitationCard title="No pudimos aceptar la invitación" message={acceptanceError?.message ?? "La invitación ya no está disponible."} action={<Button asChild variant="outline"><Link href="/workspace-select">Volver a workspaces</Link></Button>} />;
 }
 
 function InvitationCard({ title, message, action }: { title: string; message: string; action?: React.ReactNode }) {

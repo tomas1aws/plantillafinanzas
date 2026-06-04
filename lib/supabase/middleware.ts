@@ -22,7 +22,7 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data: { user } } = await supabase.auth.getUser();
-  const isPrivate = request.nextUrl.pathname.startsWith("/dashboard");
+  const isPrivate = ["/dashboard", "/workspace-select", "/workspace-manager"].some((path) => request.nextUrl.pathname.startsWith(path));
   if (isPrivate && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
