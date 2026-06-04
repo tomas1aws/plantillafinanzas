@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getInvitationUrl, sendInvitationEmail } from "@/lib/invitations";
+import { getInvitationToken, getInvitationUrl, sendInvitationEmail } from "@/lib/invitations";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateWorkspace } from "@/lib/workspaces";
 import { accountFormSchema, accountUpdateSchema, categorySchema, categoryUpdateSchema, inviteSchema, maintenanceIdSchema, movementSchema, savingsGoalProgressSchema, savingsGoalSchema, workspaceNameSchema, workspaceSchema } from "@/lib/validations/finance";
@@ -38,18 +38,18 @@ export async function createWorkspace(formData: FormData) {
   const parsed = workspaceSchema.safeParse(formObject(formData));
   if (!parsed.success) workspaceErrorRedirect(parsed.error.issues[0]?.message ?? "Revisá los datos del workspace.");
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_workspace_with_invitation", {
+  const { data: invitationResult, error } = await supabase.rpc("create_workspace_with_invitation", {
     target_name: parsed.data.name,
     target_type: parsed.data.type,
     invitation_email: parsed.data.invitation_email || null,
     invitation_role: parsed.data.invitation_role,
   });
   if (error) workspaceErrorRedirect(`No pudimos crear el workspace: ${error.message}`);
-  const result = Array.isArray(data) ? data[0] : data;
-  const token = result?.invitation_token as string | undefined;
+  const invitationToken = getInvitationToken(invitationResult);
   let message = "Workspace creado correctamente.";
-  if (token && parsed.data.invitation_email) {
-    const invitationUrl = getInvitationUrl(token);
+  if (parsed.data.invitation_email && !invitationToken) workspaceErrorRedirect("El workspace se creó, pero la invitación no devolvió un token válido. Revisá las invitaciones pendientes antes de compartir el link.");
+  if (invitationToken && parsed.data.invitation_email) {
+    const invitationUrl = getInvitationUrl(invitationToken);
     const delivery = await sendInvitationEmail({ email: parsed.data.invitation_email, workspaceName: parsed.data.name, invitationUrl });
     message = delivery.sent ? "Workspace creado e invitación enviada." : "Workspace creado. Compartí el link de invitación manualmente.";
     redirect(`/dashboard/workspaces?message=${encodeURIComponent(message)}&inviteLink=${encodeURIComponent(invitationUrl)}`);
@@ -63,11 +63,16 @@ export async function inviteMember(formData: FormData) {
   const workspaceId = maintenanceIdSchema.safeParse(formData.get("workspace_id"));
   if (!parsed.success || !workspaceId.success) workspaceErrorRedirect("Revisá los datos de la invitación.");
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_workspace_invitation", { target_workspace: workspaceId.data, target_email: parsed.data.email, target_role: parsed.data.role });
+  const { data: invitationToken, error } = await supabase.rpc("create_workspace_invitation", {
+    target_email: parsed.data.email,
+    target_role: parsed.data.role,
+    target_workspace: workspaceId.data,
+  });
   const returnPath = safeRedirect(formData.get("return_path"), "/dashboard/workspaces");
   if (error) errorRedirect(returnPath, `No pudimos crear la invitación: ${error.message}`);
-  const result = Array.isArray(data) ? data[0] : data;
-  const invitationUrl = getInvitationUrl(result.invitation_token);
+  const normalizedInvitationToken = getInvitationToken(invitationToken);
+  if (!normalizedInvitationToken) errorRedirect(returnPath, "La invitación se creó, pero no devolvió un token válido. No se generó ningún link para compartir.");
+  const invitationUrl = getInvitationUrl(normalizedInvitationToken);
   const workspaceName = String(formData.get("workspace_name") || "workspace compartido");
   const delivery = await sendInvitationEmail({ email: parsed.data.email, workspaceName, invitationUrl });
   revalidatePath("/dashboard/workspaces"); revalidatePath(returnPath);

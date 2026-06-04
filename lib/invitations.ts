@@ -6,6 +6,16 @@ export function getInvitationUrl(token: string) {
   return `${getSiteUrl()}/invite/${token}`;
 }
 
+export function getInvitationToken(data: unknown): string | null {
+  if (typeof data === "string" && data.trim()) return data.trim();
+  if (Array.isArray(data)) return getInvitationToken(data[0]);
+  if (data && typeof data === "object") {
+    const result = data as { invitation_token?: unknown; token?: unknown };
+    return getInvitationToken(result.invitation_token ?? result.token);
+  }
+  return null;
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 }
