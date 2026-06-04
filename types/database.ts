@@ -77,7 +77,7 @@ export interface WorkspaceInvitation {
   email: string;
   role: Exclude<WorkspaceRole, "owner">;
   status: "pending" | "accepted" | "revoked";
-  token: string;
+  token: string | null;
   created_at: string;
   expires_at: string | null;
 }
