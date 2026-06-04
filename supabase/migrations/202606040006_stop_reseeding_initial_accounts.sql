@@ -1,4 +1,5 @@
--- Automatic workspace onboarding for authenticated users who do not have one yet.
+-- Initial accounts are suggestions created only with a new workspace. Existing
+-- workspaces must not recreate them after a user renames or deletes them.
 create or replace function public.get_or_create_personal_workspace(target_user uuid default auth.uid())
 returns table (
   id uuid,
