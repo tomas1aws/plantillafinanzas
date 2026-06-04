@@ -77,12 +77,12 @@ export function DashboardPeriodFilter({
     navigate("custom", customFrom, customTo);
   };
 
-  return <section className="rounded-2xl border bg-[var(--card)] p-4 shadow-sm">
+  return <section className="rounded-2xl border bg-[var(--card-header)] p-4 shadow-[var(--shadow-soft)]">
     <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-teal-800"><CalendarDays size={18} /><span>Período activo: {activeLabel}</span></div>
         <div className="flex flex-wrap gap-2">
-          {([['today', 'Hoy'], ['current-month', 'Este mes'], ['current-year', 'Este año'], ['all', 'Todo']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => navigate(value)} className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${period === value ? "border-teal-700 bg-teal-700 text-white" : "bg-[var(--input)] text-slate-600 hover:border-teal-600 hover:text-teal-700"}`}>{label}</button>)}
+          {([['today', 'Hoy'], ['current-month', 'Este mes'], ['current-year', 'Este año'], ['all', 'Todo']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => navigate(value)} className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${period === value ? "border-teal-700 bg-teal-700 text-white" : "bg-[var(--input)] text-slate-600 hover:border-blue-600 hover:text-blue-600"}`}>{label}</button>)}
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -93,7 +93,7 @@ export function DashboardPeriodFilter({
     {selectedPeriod === "custom" ? <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-end">
       <label className="grid gap-1 text-xs font-medium text-slate-500">Fecha desde<Input type="date" value={customFrom} max={customTo || undefined} onChange={(event) => setCustomFrom(event.target.value)} /></label>
       <label className="grid gap-1 text-xs font-medium text-slate-500">Fecha hasta<Input type="date" value={customTo} min={customFrom || undefined} onChange={(event) => setCustomTo(event.target.value)} /></label>
-      <button type="button" disabled={!customFrom || !customTo || customFrom > customTo} onClick={applyCustom} className="h-10 rounded-xl bg-teal-700 px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">Aplicar período</button>
+      <button type="button" disabled={!customFrom || !customTo || customFrom > customTo} onClick={applyCustom} className="h-10 rounded-xl bg-teal-700 px-5 text-sm font-medium text-white transition-colors duration-200 hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">Aplicar período</button>
     </div> : null}
   </section>;
 }
