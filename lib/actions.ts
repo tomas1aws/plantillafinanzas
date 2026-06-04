@@ -64,10 +64,8 @@ export async function deleteAccount(formData: FormData) {
   const id = maintenanceIdSchema.safeParse(formData.get("id"));
   if (!id.success) accountErrorRedirect("La cuenta seleccionada no es válida.");
   const supabase = await createClient();
-  const { data: deletedAccount, error } = await supabase.from("accounts").delete().eq("id", id.data).select("id").maybeSingle();
-  if (error?.code === "23503") accountErrorRedirect("No se puede eliminar esta cuenta porque tiene movimientos asociados. Primero revertí o eliminá esos movimientos.");
-  if (error) accountErrorRedirect(`No pudimos eliminar la cuenta: ${error.message}`);
-  if (!deletedAccount) accountErrorRedirect("No pudimos eliminar la cuenta. Verificá que exista y que tengas permisos para eliminarla.");
+  const { error } = await supabase.rpc("delete_account_with_movements", { target_id: id.data });
+  if (error) accountErrorRedirect(`No pudimos eliminar la cuenta y sus movimientos: ${error.message}`);
   revalidatePath("/dashboard"); revalidatePath("/dashboard/accounts"); revalidatePath("/dashboard/movements");
   redirect("/dashboard/accounts");
 }

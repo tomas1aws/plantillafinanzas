@@ -19,6 +19,6 @@ export function AccountEditForm({ account, hasMovements }: { account: Account; h
         <Button size="sm">Guardar cambios</Button>
       </form>
     </details>
-    <ConfirmAction action={deleteAccount} id={account.id} label="Eliminar" confirmation="¿Confirmás que querés eliminar definitivamente esta cuenta?" />
+    <ConfirmAction action={deleteAccount} id={account.id} label="Eliminar" confirmation="Esto eliminará la cuenta y todos sus movimientos asociados. Esta acción no se puede deshacer." />
   </div>;
 }
