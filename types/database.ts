@@ -33,6 +33,7 @@ export interface Category {
   kind: CategoryKind;
   color: string;
   is_default: boolean;
+  is_active: boolean;
 }
 
 export interface Movement {
@@ -48,6 +49,9 @@ export interface Movement {
   description: string | null;
   created_by: string;
   created_at: string;
+  is_reversed: boolean;
+  reversed_at: string | null;
+  reversed_by: string | null;
 }
 
 export interface SavingsGoal {

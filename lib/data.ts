@@ -49,12 +49,13 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
     const typedCategories = (categories ?? []) as Category[];
     const typedMovements = (movements ?? []) as Movement[];
     const typedGoals = (goals ?? []) as SavingsGoal[];
-    const income = typedMovements.filter((m) => m.type === "income").reduce((sum, m) => sum + Number(m.amount), 0);
-    const expense = typedMovements.filter((m) => m.type === "expense").reduce((sum, m) => sum + Number(m.amount), 0);
+    const activeMovements = typedMovements.filter((movement) => !movement.is_reversed);
+    const income = activeMovements.filter((m) => m.type === "income").reduce((sum, m) => sum + Number(m.amount), 0);
+    const expense = activeMovements.filter((m) => m.type === "expense").reduce((sum, m) => sum + Number(m.amount), 0);
     const netWorth = typedAccounts.filter((a) => a.is_active).reduce((sum, a) => sum + Number(a.current_balance), 0);
 
     const seriesMap = new Map<string, { date: string; income: number; expense: number }>();
-    typedMovements.forEach((movement) => {
+    activeMovements.forEach((movement) => {
       const current = seriesMap.get(movement.date) ?? { date: movement.date, income: 0, expense: 0 };
       if (movement.type === "income") current.income += Number(movement.amount);
       if (movement.type === "expense") current.expense += Number(movement.amount);
@@ -63,7 +64,7 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
 
     const expensesByCategory = typedCategories
       .filter((category) => category.kind === "expense")
-      .map((category) => ({ name: category.name, value: typedMovements.filter((m) => m.type === "expense" && m.category_id === category.id).reduce((sum, m) => sum + Number(m.amount), 0), color: category.color }))
+      .map((category) => ({ name: category.name, value: activeMovements.filter((m) => m.type === "expense" && m.category_id === category.id).reduce((sum, m) => sum + Number(m.amount), 0), color: category.color }))
       .filter((item) => item.value > 0);
 
     return {

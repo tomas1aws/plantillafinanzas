@@ -36,6 +36,12 @@ export const categorySchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#0f766e"),
 });
 
+export const categoryUpdateSchema = categorySchema.omit({ workspace_id: true }).extend({
+  id: z.string().uuid(),
+});
+
+export const maintenanceIdSchema = z.string().uuid();
+
 export const movementSchema = z.object({
   workspace_id: z.string().uuid(),
   type: z.enum(["income", "expense", "transfer"]),
