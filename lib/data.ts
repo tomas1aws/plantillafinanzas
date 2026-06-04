@@ -38,8 +38,8 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
     const [{ data: accounts, error: accountsError }, { data: categories, error: categoriesError }, { data: movements, error: movementsError }, { data: goals, error: goalsError }] = await Promise.all([
       supabase.from("accounts").select("*").eq("workspace_id", activeWorkspace).eq("currency", currency).order("name"),
       supabase.from("categories").select("*").eq("workspace_id", activeWorkspace).order("kind").order("name"),
-      supabase.from("movements").select("*").eq("workspace_id", activeWorkspace).eq("currency", currency).gte("date", monthStart).order("date", { ascending: false }).limit(50),
-      supabase.from("savings_goals").select("*").eq("workspace_id", activeWorkspace).eq("currency", currency).order("created_at", { ascending: false }),
+      supabase.from("movements").select("*").eq("workspace_id", activeWorkspace).eq("currency", currency).gte("date", monthStart).order("date", { ascending: false }),
+      supabase.from("savings_goals").select("*").eq("workspace_id", activeWorkspace).order("created_at", { ascending: false }),
     ]);
 
     const queryError = accountsError ?? categoriesError ?? movementsError ?? goalsError;
@@ -63,7 +63,7 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
 
     const expensesByCategory = typedCategories
       .filter((category) => category.kind === "expense")
-      .map((category) => ({ name: category.name, value: typedMovements.filter((m) => m.category_id === category.id).reduce((sum, m) => sum + Number(m.amount), 0), color: category.color }))
+      .map((category) => ({ name: category.name, value: typedMovements.filter((m) => m.type === "expense" && m.category_id === category.id).reduce((sum, m) => sum + Number(m.amount), 0), color: category.color }))
       .filter((item) => item.value > 0);
 
     return {
@@ -81,5 +81,29 @@ export async function getDashboardData(workspaceId?: string, currency: Currency 
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido durante el onboarding automático.";
     return { workspaces: [], activeWorkspace: null, accounts: [], categories: [], movements: [], goals: [], metrics: emptyMetrics, series: [], expensesByCategory: [], onboardingError: message };
+  }
+}
+
+export async function getAccountsData() {
+  const supabase = await createClient();
+  const user = await getSessionUser();
+  if (!user) return { accounts: [] as Account[], movementAccountIds: [] as string[], onboardingError: null as string | null };
+  try {
+    const workspaces = await getUserWorkspaces(user.id);
+    const workspaceId = workspaces[0]?.id;
+    if (!workspaceId) return { accounts: [] as Account[], movementAccountIds: [] as string[], onboardingError: "No hay un workspace activo." };
+    const [{ data: accounts, error: accountsError }, { data: movements, error: movementsError }] = await Promise.all([
+      supabase.from("accounts").select("*").eq("workspace_id", workspaceId).order("name"),
+      supabase.from("movements").select("account_id,transfer_account_id").eq("workspace_id", workspaceId),
+    ]);
+    if (accountsError || movementsError) throw new Error(accountsError?.message ?? movementsError?.message);
+    const movementAccountIds = new Set<string>();
+    for (const movement of movements ?? []) {
+      movementAccountIds.add(movement.account_id);
+      if (movement.transfer_account_id) movementAccountIds.add(movement.transfer_account_id);
+    }
+    return { accounts: (accounts ?? []) as Account[], movementAccountIds: [...movementAccountIds], onboardingError: null };
+  } catch (error) {
+    return { accounts: [] as Account[], movementAccountIds: [] as string[], onboardingError: error instanceof Error ? error.message : "No pudimos cargar las cuentas." };
   }
 }

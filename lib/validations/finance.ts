@@ -19,6 +19,11 @@ export const accountFormSchema = z.object({
   initial_balance: z.coerce.number().default(0),
 });
 
+export const accountUpdateSchema = accountFormSchema.extend({
+  id: z.string().uuid(),
+  is_active: z.enum(["true", "false"]).transform((value) => value === "true"),
+});
+
 export const accountSchema = accountFormSchema.extend({
   workspace_id: z.string().uuid(),
   is_active: z.coerce.boolean().default(true),
@@ -41,9 +46,10 @@ export const movementSchema = z.object({
   transfer_account_id: z.string().uuid().optional().nullable(),
   category_id: z.string().uuid().optional().nullable(),
   description: z.string().max(240).optional().nullable(),
-}).refine((data) => data.type !== "transfer" || data.transfer_account_id, {
-  message: "Las transferencias requieren cuenta destino",
-  path: ["transfer_account_id"],
+}).superRefine((data, context) => {
+  if (data.type === "transfer" && !data.transfer_account_id) context.addIssue({ code: "custom", message: "Las transferencias requieren una cuenta destino.", path: ["transfer_account_id"] });
+  if (data.type === "transfer" && data.transfer_account_id === data.account_id) context.addIssue({ code: "custom", message: "La cuenta destino debe ser diferente de la cuenta origen.", path: ["transfer_account_id"] });
+  if (data.type !== "transfer" && data.transfer_account_id) context.addIssue({ code: "custom", message: "Solo las transferencias pueden tener cuenta destino.", path: ["transfer_account_id"] });
 });
 
 export const savingsGoalSchema = z.object({
@@ -53,4 +59,9 @@ export const savingsGoalSchema = z.object({
   current_amount: z.coerce.number().min(0).default(0),
   currency: currencySchema,
   target_date: z.string().optional().nullable(),
+});
+
+export const savingsGoalProgressSchema = z.object({
+  id: z.string().uuid(),
+  current_amount: z.coerce.number().min(0),
 });
